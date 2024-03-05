@@ -13,6 +13,8 @@ if root_path not in sys.path:
 
 # Get the relative path of the root directory with respect to the current working directory
 ROOT = root_path.relative_to(Path.cwd())
+print("ROOT path directory: ")
+print(ROOT)
 
 # Sources
 IMAGE = 'Image'
@@ -41,7 +43,7 @@ VIDEOS_DICT = {
 
 # ML Model config
 MODEL_DIR = ROOT / 'weights'
-DETECTION_MODEL = MODEL_DIR / 'best_final.pt'
+DETECTION_MODEL = MODEL_DIR / 'yolov8n.pt'
 # In case of your custome model comment out the line above and
 # Place your custom model pt file name at the line below 
 # DETECTION_MODEL = MODEL_DIR / 'my_detection_model.pt'
