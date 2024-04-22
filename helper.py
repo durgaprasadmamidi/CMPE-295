@@ -2,12 +2,116 @@ from ultralytics import YOLO
 import time
 import streamlit as st
 import cv2
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 import settings
 import subprocess
 import re
 
+# Initialize lists to store counts
+sitting_counts = []
+standing_counts = []
+investigating_counts = []
+lying_counts = []
+
+
+
+# Create initial plots
+global fig, axes
+fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+
+
+
+# def update_and_display_activity_graphs(counts):
+#     """
+#     Updates the counts of pigs in different activities and displays line graphs.
+
+#     Parameters:
+#         counts (dict): Dictionary containing the counts of pigs in different activities.
+
+#     Returns:
+#         None
+#     """
+#     # global sitting_counts, standing_counts, investigating_counts, lying_counts
+
+#     # # Update the counts lists
+#     # sitting_counts.append(counts.get("Sitting", 0))
+#     # standing_counts.append(counts.get("Standing", 0))
+#     # investigating_counts.append(counts.get("Investigating", 0))
+#     # lying_counts.append(counts.get("Lying", 0))
+
+#     # # Create time indices for the x-axis
+#     # time_indices = np.arange(len(sitting_counts))
+
+#     # # Update the data of the existing plots
+#     # axes[0, 0].clear()
+#     # axes[0, 0].plot(time_indices, sitting_counts, marker='o', color='r')
+#     # axes[0, 0].set_title('Sitting Counts')
+#     # axes[0, 0].set_xlabel('Time')
+#     # axes[0, 0].set_ylabel('Count')
+
+#     # axes[0, 1].clear()
+#     # axes[0, 1].plot(time_indices, standing_counts, marker='o', color='g')
+#     # axes[0, 1].set_title('Standing Counts')
+#     # axes[0, 1].set_xlabel('Time')
+#     # axes[0, 1].set_ylabel('Count')
+
+#     # axes[1, 0].clear()
+#     # axes[1, 0].plot(time_indices, investigating_counts, marker='o', color='b')
+#     # axes[1, 0].set_title('Investigating Counts')
+#     # axes[1, 0].set_xlabel('Time')
+#     # axes[1, 0].set_ylabel('Count')
+
+#     # axes[1, 1].clear()
+#     # axes[1, 1].plot(time_indices, lying_counts, marker='o', color='m')
+#     # axes[1, 1].set_title('Lying Counts')
+#     # axes[1, 1].set_xlabel('Time')
+#     # axes[1, 1].set_ylabel('Count')
+
+
+#     # st.pyplot(fig)
+    
+
+    
+#     global sitting_counts, standing_counts, investigating_counts, lying_counts
+
+#     # Update the counts lists
+#     sitting_counts.append(counts.get("Investigating", 0))
+#     standing_counts.append(counts.get("Standing", 0))
+#     investigating_counts.append(counts.get("Lying", 0))
+#     lying_counts.append(counts.get("Sleeping", 0))
+
+#     # Create time indices for the x-axis
+#     time_indices = np.arange(len(sitting_counts))
+
+#     # Create a new figure
+#     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+
+#     # Plot the updated data
+#     axes[0, 0].plot(time_indices, sitting_counts, marker='o', color='r')
+#     axes[0, 0].set_title('Sitting Counts')
+#     axes[0, 0].set_xlabel('Time')
+#     axes[0, 0].set_ylabel('Count')
+
+#     axes[0, 1].plot(time_indices, standing_counts, marker='o', color='g')
+#     axes[0, 1].set_title('Standing Counts')
+#     axes[0, 1].set_xlabel('Time')
+#     axes[0, 1].set_ylabel('Count')
+
+#     axes[1, 0].plot(time_indices, investigating_counts, marker='o', color='b')
+#     axes[1, 0].set_title('Investigating Counts')
+#     axes[1, 0].set_xlabel('Time')
+#     axes[1, 0].set_ylabel('Count')
+
+#     axes[1, 1].plot(time_indices, lying_counts, marker='o', color='m')
+#     axes[1, 1].set_title('Lying Counts')
+#     axes[1, 1].set_xlabel('Time')
+#     axes[1, 1].set_ylabel('Count')
+
+#     # Display the updated plot
+#     return st.pyplot(fig)
 
 def load_model(model_path):
     """
@@ -63,6 +167,7 @@ def play_stored_video(conf, model):
             vid_cap = cv2.VideoCapture(
                 str(settings.VIDEOS_DICT.get(source_vid)))
             st_frame = st.empty()
+            st_frame2 = st.empty()
             while (vid_cap.isOpened()):
                 success, image = vid_cap.read()
                 if success:
@@ -70,6 +175,7 @@ def play_stored_video(conf, model):
                     _display_detected_frames(conf,
                                              model,
                                              st_frame,
+                                             st_frame2,
                                              image,
                                              is_display_tracker,
                                              tracker
@@ -78,6 +184,7 @@ def play_stored_video(conf, model):
                 else:
                     vid_cap.release()
                     break
+            st_frame2.empty()
         except Exception as e:
             st.sidebar.error("Error loading video: " + str(e))
 
@@ -85,7 +192,9 @@ def play_stored_video(conf, model):
 
 
 
-def _display_detected_frames(conf, model, st_frame, image, is_display_tracking=None, tracker=None):
+
+
+def _display_detected_frames(conf, model, st_frame,st_frame2, image, is_display_tracking=None, tracker=None):
     """
     Display the detected objects on a video frame using the YOLOv8 model.
 
@@ -176,29 +285,6 @@ def _display_detected_frames(conf, model, st_frame, image, is_display_tracking=N
     cv2.putText(image, overlay_text_sleeping, (text_position[0], text_position[1] + 3 * text_size[1] + 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
 
 
-#     result_string = str(res[0])
-# # Extract the dictionary part of the string
-#     start_index = result_string.find("{")
-#     end_index = result_string.find("}") + 1
-#     result_dict_str = result_string[start_index:end_index]
-    
-#     print(result_dict_str)
-
-    # result_dict = eval(result_dict_str) 
-    # investigating_value = result_dict.get(0)
-    # lying_value = result_dict.get(1)
-    # standing_value = result_dict.get(2)
-    # sitting_value = result_dict.get(3)
-
-    # print("Investigating:", investigating_value)
-    # print("Lying:", lying_value)
-    # print("Standing:", standing_value)
-    # print("Sitting:", sitting_value)
-
-
-
-
-    
     # # Plot the detected objects on the video frame
     res_plotted = res[0].plot()
     st_frame.image(res_plotted,
@@ -206,6 +292,26 @@ def _display_detected_frames(conf, model, st_frame, image, is_display_tracking=N
                    channels="BGR",
                    use_column_width=True
                    )
+    
+
+    activities = list(counts.keys())
+    counts_values = list(counts.values())
+
+    fig, ax = plt.subplots()
+    ax.bar(activities, counts_values, color='blue')
+    ax.set_xlabel('Activity')
+    ax.set_ylabel('Number of Pigs')
+    ax.set_title('Pig Activity')
+    ax.grid(True)
+
+    fig.canvas.draw()
+    plt.close(fig)
+    graph_image = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+    graph_image = graph_image.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    st_frame2.image(graph_image, caption='Pig Activity Graph')
+    
+
+
 
 
 

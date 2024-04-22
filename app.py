@@ -4,13 +4,13 @@ import PIL
 
 # External packages
 import streamlit as st
-
+import cv2
 # Local Modules
 import settings
 import helper
 
 
-def overlaytext(res):
+def overlaytext(res,image):
     res_str = res
     save_dir_start = res_str.find("save_dir: ") + len("save_dir: ")
     save_dir_end = res_str.find("\n", save_dir_start)
@@ -141,7 +141,7 @@ if source_radio == settings.IMAGE:
                 res = model.predict(uploaded_image,
                                     conf=confidence,save_txt = True,project="report", name="sub"
                                     )
-                #overlaytext(str(res[0]))
+                #overlaytext(str(res[0],uploaded_image))
                 boxes = res[0].boxes
                 res_plotted = res[0].plot()[:, :, ::-1]
                 st.image(res_plotted, caption='Detected Image',
@@ -153,6 +153,7 @@ if source_radio == settings.IMAGE:
                 except Exception as ex:
                     # st.write(ex)
                     st.write("No image is uploaded yet!")
+                
 
 elif source_radio == settings.VIDEO:
     helper.play_stored_video(confidence, model)
